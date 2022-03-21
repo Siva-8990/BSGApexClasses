@@ -18,7 +18,7 @@ global  class AdditionalQuantityController
         return quote;
     }
     
-    public List<QuoteLineWrp> getquotelinelist()
+    public static void getquotelinelist()
     {
         system.debug('quoteId'+quoteId);
         
@@ -47,30 +47,38 @@ global  class AdditionalQuantityController
             String CropYearProductCode = ar.get('Crop_Year__c') +' - '+ar.get('ProductCode');
             AggregateDetMap.put(CropYearProductCode, (Decimal)ar.get('quoteLineAggregateQty'));
         }
+		
+		
+        getquotelinelistDetails(quotelinefromquote,nameBasedInventoryMap,AggregateDetMap);
         
-        List<SBQQ__QuoteLine__c> quotelinelist=new list<SBQQ__QuoteLine__c>();
-        list<QuoteLineWrp> quoteLineWrpList=new List<QuoteLineWrp>();
-        List<String> AggregateDetMsg = new List<String>();
-        for(SBQQ__QuoteLine__c quoteLineObject:quotelinefromquote)
-        {
-            if(nameBasedInventoryMap.containsKey(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode))
-            {
-                if(AggregateDetMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode) > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Active__c==true&& nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).No_more_crop_available_with_Grower__c == false)
-                {
-                    Boolean checkDupProductCropYear = AggregateDetMsg.contains(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode);
-                    if(checkDupProductCropYear == false){
-                        
-                    
-                    Inventory__c inventoryRecord=nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode);
-                    
-                    quoteLineWrpList.add(new QuoteLineWrp(AggregateDetMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode),quoteLineObject.SBQQ__Product__r.name,quoteLineObject.Crop_Year__c,AggregateDetMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode)-inventoryRecord.Available_Volume__c) );
-                    AggregateDetMsg.add(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode);
-                    }
-                }
-            }
-        }
-        return quoteLineWrpList;
     }
+	
+	public List<QuoteLineWrp> getquotelinelistDetails(List<SBQQ__QuoteLine__c> quotelinefromquote,Map<String,Inventory__c> nameBasedInventoryMap,Map<String, Decimal> AggregateDetMap)
+    {
+		list<QuoteLineWrp> quoteLineWrpList=new List<QuoteLineWrp>();
+		List<String> AggregateDetMsg = new List<String>();
+		for(SBQQ__QuoteLine__c quoteLineObject:quotelinefromquote)
+		{
+			if(nameBasedInventoryMap.containsKey(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode))
+			{
+				if(AggregateDetMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode) > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Active__c==true&& nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).No_more_crop_available_with_Grower__c == false)
+				{
+					Boolean checkDupProductCropYear = AggregateDetMsg.contains(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode);
+					if(checkDupProductCropYear == false){
+						
+					
+					Inventory__c inventoryRecord=nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode);
+					
+					quoteLineWrpList.add(new QuoteLineWrp(AggregateDetMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode),quoteLineObject.SBQQ__Product__r.name,quoteLineObject.Crop_Year__c,AggregateDetMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode)-inventoryRecord.Available_Volume__c) );
+					AggregateDetMsg.add(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode);
+					}
+				}
+			}
+		}
+		return quoteLineWrpList;
+
+	}
+	
     
     
     
