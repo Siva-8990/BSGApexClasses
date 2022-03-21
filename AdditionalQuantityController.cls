@@ -20,9 +20,9 @@ global  class AdditionalQuantityController
             Schema.SObjectType.SBQQ__Quote__c.fields.Org_Instance__c.isAccessible() && 
 			Schema.SObjectType.SBQQ__Quote__c.fields.Quote_Name__c.isAccessible() &&
 			Schema.SObjectType.SBQQ__Quote__c.fields.SBQQ__Status__c.isAccessible() &&
-			Schema.SObjectType.SBQQ__Quote__c.fields.SBQQ__Opportunity2__r.owner.name.isAccessible() &&
+			Schema.SObjectType.SBQQ__Quote__c.fields.SBQQ__Opportunity2__c.isAccessible() &&
 			Schema.SObjectType.SBQQ__Quote__c.fields.Name.isAccessible() &&
-			Schema.SObjectType.SBQQ__Quote__c.fields.Name.isAccessible()
+			Schema.SObjectType.SBQQ__Quote__c.fields.SBQQ__Account__c.isAccessible()
         ){
         SBQQ__Quote__c quote = [Select Id,Org_Instance__c,Quote_Name__c,SBQQ__Status__c,SBQQ__Opportunity2__r.owner.name,Name,SBQQ__Account__r.name from SBQQ__Quote__c where Id =: quoteId];
 		}
