@@ -10,7 +10,7 @@ public with sharing class BSGContractTriggerHelper {
             opportunityIdSet.add(BSGContractsRecord.Opportunity__c);
         }
         
-        if(!opportunityIdSet.isEmpty())
+        if(!opportunityIdSet.isEmpty() && BSG_Contracts__c.SObjectType.getDescribe().isAccessible() && Schema.SObjectType.BSG_Contracts__c.fields.Id.isAccessible() && Schema.SObjectType.BSG_Contracts__c.fields.Opportunity__c.isAccessible())
         {
             Map<Id,BSG_Contracts__c> bsgContractsMap = new Map<Id,BSG_Contracts__c>([Select Id,Opportunity__c from BSG_Contracts__c where Opportunity__c =: opportunityIdSet]);
             for(BSG_Contracts__c BSGContractsRecord : bsgContractsMap.values())
