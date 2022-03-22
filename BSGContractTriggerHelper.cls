@@ -13,7 +13,7 @@ public with sharing class BSGContractTriggerHelper {
         duplicateBSGContractForOpportunityCheckMethod(opportunityIdSet);
         
     }
-	public static void duplicateBSGContractForOpportunityCheckMethod(opportunityIdSet)
+	public static void duplicateBSGContractForOpportunityCheckMethod(Set<Id> opportunityIdSet)
     {
 		Set<Id> opportunityExistingList = new Set<Id>();
 		if(!opportunityIdSet.isEmpty() && BSG_Contracts__c.SObjectType.getDescribe().isAccessible() && Schema.SObjectType.BSG_Contracts__c.fields.Id.isAccessible() && Schema.SObjectType.BSG_Contracts__c.fields.Opportunity__c.isAccessible())
