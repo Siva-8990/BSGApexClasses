@@ -26,7 +26,7 @@ public with sharing class BSGContractTriggerHelper {
 		{
 			if(opportunityExistingList.contains(BSGContractsRecord.Opportunity__c))
 			{
-				if(BSGContractsRecord.id <> null){
+				if(BSGContractsRecord.id != null){
 					if(bsgContractsMap.containsKey(BSGContractsRecord.Id) && bsgContractsMap.get(BSGContractsRecord.Id).Opportunity__c <> BSGContractsRecord.Opportunity__c)
 					{
 						BSGContractsRecord.addError('There can only be one  BSG Contract associated to an Opportunity');
