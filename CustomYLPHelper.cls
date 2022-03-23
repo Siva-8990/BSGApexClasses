@@ -1,13 +1,12 @@
 public with sharing class CustomYLPHelper {
-  //used to avoid Recursive Trigger
-  public static Boolean isFirstTime = true;
-  public static void checkYearExists(List < Custom_Yearly_List_Price__c > customYLPList, Boolean isInsert) {
+	//used to avoid Recursive Trigger
+	public static Boolean isFirstTime = true;
+	public static void checkYearExists(List < Custom_Yearly_List_Price__c > customYLPList, Boolean isInsert) {
     Try {
       Id contRecordTypeId = Schema.SObjectType.Custom_Yearly_List_Price__c.getRecordTypeInfosByName().get('Rahr').getRecordTypeId();
 
       List < Id > productIds = new List < Id > ();
       for (Custom_Yearly_List_Price__c customYLPRec: customYLPList) {
-
         productIds.add(customYLPRec.Product__c);
       }
       system.debug('productIds' + productIds);
@@ -56,13 +55,12 @@ public with sharing class CustomYLPHelper {
       String cylpStatusDynamic;
 
       for (Custom_Yearly_List_Price__c newCYLPRecord: CYLPList) {
+		  cylpStatusDynamic = 'inactive';
         for (Custom_Yearly_List_Price__c oldCYLPRecord: CYLPMap.values()) {
 
-            if ((newCYLPRecord.RecordTypeId == hopRecordTypeId || newCYLPRecord.RecordTypeId == caHopsRecordTypeId) && newCYLPRecord.Product__c == oldCYLPRecord.Product__c && newCYLPRecord.Crop_Year__c == oldCYLPRecord.Crop_Year__c && newCYLPRecord.CurrencyIsoCode == oldCYLPRecord.CurrencyIsoCode && oldCYLPRecord.Active__c == True || oldCYLPRecord.Active__c == False) {
+            if ((newCYLPRecord.RecordTypeId == hopRecordTypeId || newCYLPRecord.RecordTypeId == caHopsRecordTypeId) && ((newCYLPRecord.Product__c == oldCYLPRecord.Product__c && newCYLPRecord.Crop_Year__c == oldCYLPRecord.Crop_Year__c && newCYLPRecord.CurrencyIsoCode == oldCYLPRecord.CurrencyIsoCode) && oldCYLPRecord.Active__c == True || oldCYLPRecord.Active__c == False)) {
               if (newCYLPRecord.Active__c == True) {
                 cylpStatusDynamic = 'active';
-              } else if (newCYLPRecord.Active__c == False) {
-                cylpStatusDynamic = 'inactive';
               }
               if (isInsert)
                 newCYLPRecord.addError('The Crop Year ' + newCYLPRecord.Crop_Year__c + ' for this product already exists and ' + cylpStatusDynamic + '.');
