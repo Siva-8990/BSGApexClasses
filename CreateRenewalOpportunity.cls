@@ -1,13 +1,4 @@
-/*******************************************************************************************
-* @author           Demandblue
-* @version          1.0 
-* @Status           Development Completed
-* @description      This class is used to create renewal opportunity record and invoked from the "Renewal Opportunity" process builder. 
-*********************************************************************************************
-Version     Date            Team        Comments
-*********************************************************************************************
-* 1         27 Mar 2020     Vignesh     Initial Development 
-*********************************************************************************************/
+
 public without sharing class CreateRenewalOpportunity 
 {       
     @Invocablemethod
@@ -32,9 +23,19 @@ public without sharing class CreateRenewalOpportunity
             List<OpportunityLineItem> renewalOpportunityLineItemList = new List<OpportunityLineItem>();
             
             //Existing Opportunity List which holds to BSG Contract List as well.
-            List<Opportunity> oldOpportunityList = [SELECT Amount,AccountId,Contact__c,CloseDate,Estimated_Volume__c,Id,Name,OwnerId,Probability,RecordTypeId,RecordType.Name,Renewal__c,StageName,Product_Line__c,(SELECT Id,Effective_End_Date__c FROM Contracts__r limit 1) FROM Opportunity where Id =: oldOpportunityIds];
+             if(Opportunity.SObjectType.getDescribe().isAccessible() && Schema.SObjectType.Opportunity.fields.Amount.isAccessible() && Schema.SObjectType.Opportunity.fields.AccountId.isAccessible() && Schema.SObjectType.Opportunity.fields.Contact__c.isAccessible() && Schema.SObjectType.Opportunity.fields.CloseDate.isAccessible() && Schema.SObjectType.Opportunity.fields.Estimated_Volume__c.isAccessible() && Schema.SObjectType.Opportunity.fields.Id.isAccessible() && Schema.SObjectType.Opportunity.fields.Name.isAccessible() &&
+			 Schema.SObjectType.Opportunity.fields.OwnerId.isAccessible() && Schema.SObjectType.Opportunity.fields.Probability.isAccessible() && Schema.SObjectType.Opportunity.fields.RecordTypeId.isAccessible() && Schema.SObjectType.Opportunity.fields.RecordType.Name.isAccessible() &&
+			 Schema.SObjectType.Opportunity.fields.Renewal__c.isAccessible() && Schema.SObjectType.Opportunity.fields.StageName.isAccessible() &&
+			 Schema.SObjectType.Opportunity.fields.Product_Line__c.isAccessible() && Contracts__c.SObjectType.getDescribe().isAccessible() &&Schema.SObjectType.Contracts__c.fields.Id.isAccessible())
+            List<Opportunity> oldOpportunityList = [SELECT Amount,AccountId,Contact__c,CloseDate,Estimated_Volume__c,Id,Name,OwnerId,Probability,RecordTypeId,RecordType.Name,Renewal__c,StageName,Product_Line__c,(SELECT Id,  FROM Contracts__r limit 1) FROM Opportunity where Id =: oldOpportunityIds];
             
             //Opportunity Line Item List for Existing Opportunity
+			if(OpportunityLineItem.SObjectType.getDescribe().isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.CurrencyIsoCode.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.Description.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.Id.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.IsDeleted.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.ListPrice.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.Id.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.Name.isAccessible() &&
+			 Schema.SObjectType.OpportunityLineItem.fields.OpportunityId.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.PricebookEntryId.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.Product2Id.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.ProductCode.isAccessible() &&
+			 Schema.SObjectType.OpportunityLineItem.fields.Quantity.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.ServiceDate.isAccessible() &&
+			 Schema.SObjectType.OpportunityLineItem.fields.SortOrder.isAccessible() && Schema.SObjectType.OpportunityLineItem.fields.TotalPrice.isAccessible() &&
+			 Schema.SObjectType.OpportunityLineItem.fields.UnitPrice.isAccessible())
+			 
             List<OpportunityLineItem> OpportunityLineItemList = [SELECT CurrencyIsoCode,Description,Id,IsDeleted,ListPrice,Name,OpportunityId,PricebookEntryId,Product2Id,ProductCode,Quantity,ServiceDate,SortOrder,TotalPrice,UnitPrice FROM OpportunityLineItem where OpportunityId =: oldOpportunityIds];
             
             for(Opportunity opportunityRecord :oldOpportunityList)
@@ -110,4 +111,3 @@ public without sharing class CreateRenewalOpportunity
             }
 
     }
-    
