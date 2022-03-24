@@ -8,7 +8,6 @@ Version     Date            Team        Comments
 *********************************************************************************************
 * 1         27 Mar 2020     Vignesh     Initial Development 
 *********************************************************************************************/
-
 public without sharing class CreateRenewalOpportunity 
 {       
     @Invocablemethod
@@ -81,6 +80,17 @@ public without sharing class CreateRenewalOpportunity
                     //Adding old opportunity Id and Renewal opportunity Id to Map. 
                     oldAndNewOpportunityIdMap.put(getOldAndNewOpportunityIds.Parent_Opportunity__c,getOldAndNewOpportunityIds.Id);
                 }
+                createRenewalOpportunityLineItem(oldOpportunityIds,oldAndNewOpportunityIdMap,renewalOpportunityLineItemList,OpportunityLineItemList);
+            }
+        }
+        catch(Exception error)
+        {
+            system.debug(error.getMessage());
+        }
+    }
+            public static void createRenewalOpportunityLineItem(Set<Id> oldOpportunityIds,Map<String,String> oldAndNewOpportunityIdMap,List<OpportunityLineItem> renewalOpportunityLineItemList,List<OpportunityLineItem> OpportunityLineItemList ){
+                
+            
                 
                 for(OpportunityLineItem OpportunityLineItemRecord : OpportunityLineItemList)
                 {
@@ -98,11 +108,6 @@ public without sharing class CreateRenewalOpportunity
                     insert renewalOpportunityLineItemList;
                 }
             }
-        }
-        catch(Exception error)
-        {
-            system.debug(error.getMessage());
-        }
+
     }
     
-}
