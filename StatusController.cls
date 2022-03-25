@@ -21,14 +21,13 @@ public class StatusController {
         
         for(Inventory_Reserve__c Inventoryreserveobject : InventoryNewMap.values())
         {
-            if(dependentPicklistValues.containsKey(InventoryOldMap.get(Inventoryreserveobject.Id).Status__c))
-            {
-                if(!dependentPicklistValues.get(InventoryOldMap.get(Inventoryreserveobject.Id).Status__c).contains(Inventoryreserveobject.Status__c) && Inventoryreserveobject.Status__c !=  InventoryOldMap.get(Inventoryreserveobject.Id).Status__c)
+            
+                if(dependentPicklistValues.containsKey(InventoryOldMap.get(Inventoryreserveobject.Id).Status__c) && !dependentPicklistValues.get(InventoryOldMap.get(Inventoryreserveobject.Id).Status__c).contains(Inventoryreserveobject.Status__c) && Inventoryreserveobject.Status__c !=  InventoryOldMap.get(Inventoryreserveobject.Id).Status__c)
                 {
                     // Dynamic Error message which has to be shown during error conditions
                     Inventoryreserveobject.addError('You cannot go to "'+Inventoryreserveobject.Status__c+'" status."');
                 }
-            }
+            
         }
         
     }
