@@ -69,6 +69,9 @@ public without sharing class submitForApprovalValidateController {
                         }
                     }
                 }
+                
+                messageToReturn = validateBeforeApprovalProcessmethod(recordId,quote,messageToReturn);
+                
                /* if(!quoteLineMapRahr.isEmpty())
                  {
 
@@ -230,9 +233,10 @@ public without sharing class submitForApprovalValidateController {
         
         return messageToReturn;
     }
-	@AuraEnabled
-	public static String validateBeforeApprovalProcessmethod(Id recordId,SBQQ__Quote__c quote){
-		String messageToReturn = 'Success';
+
+	public static String validateBeforeApprovalProcessmethod(Id recordId,SBQQ__Quote__c quote,String messageToReturn){
+        system.debug('Checkmethod');
+		//String messageToReturn = 'Success';
 		try{
 	 if(quote.SBQQ__Primary__c)
             {
@@ -246,6 +250,7 @@ public without sharing class submitForApprovalValidateController {
                       messageToReturn = 'Please ensure you have an offtake entered for each Rahr Bulk quote line and the Total Offtake Quantity = Total Quantity for each year';
                           return messageToReturn;
                      }
+                     
                      
                     if(!OfftakeRec.isEmpty())
                 {
