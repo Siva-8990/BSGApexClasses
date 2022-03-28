@@ -76,8 +76,7 @@ public without sharing class OpportunityInventoryUpdation {
         Id recTypeId = Schema.SObjectType.Opportunity.getRecordTypeInfosByName().get('Hops').getRecordTypeId();
         
         Set<Id> opportunityClosedWonHopsIds = new Set<Id>();
-        Set<Id> opportunityDocusignCompletedIds = new Set<Id>();
-         Set<Id> opportunityExpiredIds = new Set<Id>();
+        
         
         for(Opportunity opportunityObject : opportunityRecords)
         {
@@ -87,7 +86,14 @@ public without sharing class OpportunityInventoryUpdation {
             }
         }
         
-        if(!opportunityClosedWonHopsIds.isEmpty())
+       closedWonValidationSub(opportunityRecords,opportunityClosedWonHopsIds);
+        
+    }
+	public static void closedWonValidationSub(List<Opportunity> opportunityRecords,Set<Id> opportunityClosedWonHopsIds)
+	{
+		Set<Id> opportunityDocusignCompletedIds = new Set<Id>();
+         Set<Id> opportunityExpiredIds = new Set<Id>();
+		 if(!opportunityClosedWonHopsIds.isEmpty())
         {
             
             Set<Id> quoteIds = new Set<Id>();
@@ -139,7 +145,6 @@ public without sharing class OpportunityInventoryUpdation {
                 opportunityObject.addError('Docusign envelope has not been sent/completed');
             }
         }
-        
-    }
+	}
     
 }
