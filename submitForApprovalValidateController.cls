@@ -21,15 +21,10 @@ public without sharing class submitForApprovalValidateController {
                 }
                 Set<string> inventorySet = new Set<String>();
                 Set<string> inventoryNameSet = new Set<String>();
-                /*Map<Id,SBQQ__QuoteLine__c> quoteLineNZ = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Product_Category__c,Start_Date_Non_Rahr__c,SBQQ__Quote__r.Quote_Name__c,SBQQ__Quantity__c,SBQQ__ProductName__c,SBQQ__Quote__c,SBQQ__Quote__r.Id,SBQQ__Quote__r.SBQQ__Opportunity2__c,SBQQ__Quote__r.SBQQ__Account__c,SBQQ__Quote__r.SBQQ__Account__r.name,SBQQ__Quote__r.SBQQ__Account__r.NZHL_Account__c,SBQQ__Product__c,
-                                                                                         SBQQ__Product__r.ProductCode,SBQQ__Product__r.Product_Line_Code__c,SBQQ__Product__r.Name FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND Product_Category__c = 'Craft Brewing Contracted Hops' AND  SBQQ__Quote__r.SBQQ__Account__r.NZHL_Account__c  = true AND SBQQ__Product__r.Product_Line_Code__c = 'NZHL'  ]);*/
-
+                
                 Map<Id,SBQQ__QuoteLine__c> quoteLineMap = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Product_Category__c,Start_Date_Non_Rahr__c,SBQQ__Quote__r.Quote_Name__c,SBQQ__Quantity__c,SBQQ__ProductName__c,SBQQ__Quote__c,SBQQ__Quote__r.Id,SBQQ__Quote__r.SBQQ__Opportunity2__c,SBQQ__Quote__r.SBQQ__Account__c,SBQQ__Quote__r.SBQQ__Account__r.name,SBQQ__Product__c,SBQQ__Product__r.ProductCode,SBQQ__Product__r.Name FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Craft Brewing Contracted Hops' OR Product_Category__c = 'Craft Brewing Hops')]);
                 Map<Id,SBQQ__QuoteLine__c> quoteLineMapDate = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Craft Brewing Contracted Hops' OR Product_Category__c = 'Non-Rahr Bulk' OR Product_Category__c = 'Craft Brewing Hops')]);
-               /* Map<Id,SBQQ__QuoteLine__c> quoteLineMapRahr = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c,Trucking_Cost_per_unit__c,Price_TBD__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Rahr Bulk' )]);
-               Map<Id,Offtake__c> OfftakeRec = new Map<Id,Offtake__c>([SELECT Id,Quote_Line__r.SBQQ__StartDate__c,Quote_Line__r.SBQQ__EndDate__c,QuoteLine_Qty__c,Quote_Line__r.SBQQ__Product__r.Name,Total_Offtake_Qty__c,End_Date__c,Start_Date__c,Unit__c,Jan__c,Feb__c,Mar__c,Apr__c,May__c,Jun__c,Jul__c,Aug__c,Sep__c,Oct__c,Nov__c,Dec__c
-               FROM Offtake__c where Quote_Line__c IN:  quoteLineMapRahr.Keyset()]);*/
-
+               
                 if(!quoteLineMapDate.isEmpty())
                 {
                     for(SBQQ__QuoteLine__c quoteLineObjectDate : quoteLineMapDate.values())
@@ -70,15 +65,63 @@ public without sharing class submitForApprovalValidateController {
                     }
                 }
                 
-                messageToReturn = validateBeforeApprovalProcessmethod(recordId,quote,messageToReturn);
                 
-               /* if(!quoteLineMapRahr.isEmpty())
+              
+                     
+                     messageToReturn = validateBeforeApprovalProcessForOfftakes(recordId,quote,messageToReturn);
+               
+                if(!quoteLineMap.isEmpty())
+                {
+                    for(SBQQ__QuoteLine__c quoteLineObject : quoteLineMap.values())
+                    {
+                        inventorySet.add(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode);                        
+                    }
+                }
+               
+				messageToReturn = validateBeforeApprovalProcessForWishList(recordId,quote,messageToReturn,quoteLineMap,inventorySet,sendEmailToAddCrop);
+                
+               
+            }
+            
+            else
+            {
+                messageToReturn = 'Only Primary Quote can be Submitted for Approval'; 
+                if(quote.SBQQ__StartDate__c < system.Today()){
+                    messageToReturn += ' and Start date should be greater than or equal to today.';                    
+                }
+            }
+                    
+            
+        }
+        
+
+        catch(Exception error)
+        {
+            messageToReturn = error.getMessage();
+        }
+        
+        
+        return messageToReturn;
+    }
+
+
+	public static String validateBeforeApprovalProcessForOfftakes(Id recordId,SBQQ__Quote__c quote,String messageToReturn){
+        system.debug('Checkmethod');
+		//String messageToReturn = 'Success';
+		try{
+	 if(quote.SBQQ__Primary__c)
+            {
+				 Map<Id,SBQQ__QuoteLine__c> quoteLineMapRahr = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c,Trucking_Cost_per_unit__c,Price_TBD__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Rahr Bulk' )]);
+               Map<Id,Offtake__c> OfftakeRec = new Map<Id,Offtake__c>([SELECT Id,Quote_Line__r.SBQQ__StartDate__c,Quote_Line__r.SBQQ__EndDate__c,QuoteLine_Qty__c,Quote_Line__r.SBQQ__Product__r.Name,Total_Offtake_Qty__c,End_Date__c,Start_Date__c,Unit__c,Jan__c,Feb__c,Mar__c,Apr__c,May__c,Jun__c,Jul__c,Aug__c,Sep__c,Oct__c,Nov__c,Dec__c
+               FROM Offtake__c where Quote_Line__c IN:  quoteLineMapRahr.Keyset()]);
+			   if(!quoteLineMapRahr.isEmpty())
                  {
 
                      if(quoteLineMapRahr.size() !=OfftakeRec.size() ){
                       messageToReturn = 'Please ensure you have an offtake entered for each Rahr Bulk quote line and the Total Offtake Quantity = Total Quantity for each year';
                           return messageToReturn;
                      }
+                     
                      
                     if(!OfftakeRec.isEmpty())
                 {
@@ -99,31 +142,24 @@ public without sharing class submitForApprovalValidateController {
                           messageToReturn = 'Please hit calculate on the Quote Line Editor to recalculate the prices';
                           return messageToReturn;
                        }
-                   }  */      
-                /*if(!quoteLineNZ.isEmpty())
-                 {
-
-                     for(SBQQ__QuoteLine__c quoteline1 : quoteLineNZ.values()) {
-                         
-                         
-                         if(quoteline1.SBQQ__Product__r.Product_Line_Code__c == 'NZHL' && quoteline1.SBQQ__Quote__r.SBQQ__Account__r.NZHL_Account__c  == true){
-                              quote.SBQQ__Status__c = 'Rejected';
-                         }
-                         update quote;
-                         }
-                        
-                     }  */                  
-                     
-                    
-               
-                if(!quoteLineMap.isEmpty())
-                {
-                    for(SBQQ__QuoteLine__c quoteLineObject : quoteLineMap.values())
-                    {
-                        inventorySet.add(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode);                        
-                    }
-                }
-                Map<String,Date> Availablefrommap =new map<String,Date>();
+                   }
+			}
+		}
+    catch(Exception error)
+        {
+            messageToReturn = error.getMessage();
+        }
+        
+        
+        return messageToReturn;
+    }
+	public static String validateBeforeApprovalProcessForWishList(Id recordId,SBQQ__Quote__c quote,String messageToReturn,Map<Id,SBQQ__QuoteLine__c> quoteLineMap,Set<string> inventorySet,List<Messaging.SingleEmailMessage> sendEmailToAddCrop){
+        system.debug('Check WIshlist');
+		
+        try{
+			if(quote.SBQQ__Primary__c)
+            {
+				Map<String,Date> Availablefrommap =new map<String,Date>();
                 if(!quoteLineMap.isEmpty()){
                     Map<Id,Inventory__c> inventoryMap = new Map<Id,Inventory__c>([SELECT Id, Name, Available_From__c, Soft_Reserve__c, Hard_Reserve__c, Active__c,Total_Volume__c,No_more_crop_available_with_Grower__c, Product__c,Product__r.ProductCode, Available_Volume__c, Crop_Year__c FROM Inventory__c where Name =:inventorySet]);
                     Map<String,Inventory__c> nameBasedInventoryMap = new Map<String,Inventory__c>();
@@ -133,11 +169,7 @@ public without sharing class submitForApprovalValidateController {
                         nameBasedInventoryMap.put(inventoryObject.name,inventoryObject);
                         Availablefrommap.put(inventoryObject.Crop_Year__c,inventoryObject.Available_From__c);
                     }
-                    
-                    
-                    
-                    
-                    Set<id> quoteIdList=new set<id>();                    
+				Set<id> quoteIdList=new set<id>();                    
                     Integer index = 1;
                     Boolean isWishList = false;
                     Map<String, Decimal> newMap = new Map<String, Decimal>();
@@ -213,19 +245,8 @@ public without sharing class submitForApprovalValidateController {
                     
                 }
             }
-            
-            
-            else
-            {
-                messageToReturn = 'Only Primary Quote can be Submitted for Approval'; 
-                if(quote.SBQQ__StartDate__c < system.Today()){
-                    messageToReturn += ' and Start date should be greater than or equal to today.';                    
-                }
-            }
-                    
-            
-        }
-        catch(Exception error)
+		}
+			catch(Exception error)
         {
             messageToReturn = error.getMessage();
         }
@@ -233,55 +254,9 @@ public without sharing class submitForApprovalValidateController {
         
         return messageToReturn;
     }
-
-	public static String validateBeforeApprovalProcessmethod(Id recordId,SBQQ__Quote__c quote,String messageToReturn){
-        system.debug('Checkmethod');
-		//String messageToReturn = 'Success';
-		try{
-	 if(quote.SBQQ__Primary__c)
-            {
-				 Map<Id,SBQQ__QuoteLine__c> quoteLineMapRahr = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c,Trucking_Cost_per_unit__c,Price_TBD__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Rahr Bulk' )]);
-               Map<Id,Offtake__c> OfftakeRec = new Map<Id,Offtake__c>([SELECT Id,Quote_Line__r.SBQQ__StartDate__c,Quote_Line__r.SBQQ__EndDate__c,QuoteLine_Qty__c,Quote_Line__r.SBQQ__Product__r.Name,Total_Offtake_Qty__c,End_Date__c,Start_Date__c,Unit__c,Jan__c,Feb__c,Mar__c,Apr__c,May__c,Jun__c,Jul__c,Aug__c,Sep__c,Oct__c,Nov__c,Dec__c
-               FROM Offtake__c where Quote_Line__c IN:  quoteLineMapRahr.Keyset()]);
-			   if(!quoteLineMapRahr.isEmpty())
-                 {
-
-                     if(quoteLineMapRahr.size() !=OfftakeRec.size() ){
-                      messageToReturn = 'Please ensure you have an offtake entered for each Rahr Bulk quote line and the Total Offtake Quantity = Total Quantity for each year';
-                          return messageToReturn;
-                     }
-                     
-                     
-                    if(!OfftakeRec.isEmpty())
-                {
-                   for(Offtake__c offtakeqty : OfftakeRec.values())
-                   {
-                       if(offtakeqty.Total_Offtake_Qty__c != offtakeqty.QuoteLine_Qty__c)
-                       {
-                           messageToReturn = 'Please ensure that Total Offtake Quantity = QuoteLine Quantity for each year';
-                       }
-                   }
-                }
-                   
-                 }
-                   for(SBQQ__QuoteLine__c quoteline : quoteLineMapRahr.values())
-                   {
-                       if(quoteline.Trucking_Cost_per_unit__c == 0 && quoteline.Price_TBD__c == False)
-                       {
-                          messageToReturn = 'Please hit calculate on the Quote Line Editor to recalculate the prices';
-                          return messageToReturn;
-                       }
-                   }
-			}
-		}
-    catch(Exception error)
-        {
-            messageToReturn = error.getMessage();
-        }
-        
-        
-        return messageToReturn;
-    }		
+	
+            
+	
 	
     
     @AuraEnabled
