@@ -108,7 +108,7 @@ public without sharing class OpportunityInventoryUpdation {
                 opportunityExpiredIds.add(inventoryObject.Opportunity__c); 
             }
             
-               List<dsfs__DocuSign_Status__c> docusignStatusList = [SELECT Id, dsfs__Company__c, dsfs__Envelope_Status__c, dsfs__Opportunity__c FROM dsfs__DocuSign_Status__c where dsfs__Envelope_Status__c = 'Completed' AND dsfs__Opportunity__c  IN:opportunityClosedWonHopsIds  ];
+            List<dsfs__DocuSign_Status__c> docusignStatusList = [SELECT Id, dsfs__Company__c, dsfs__Envelope_Status__c, dsfs__Opportunity__c FROM dsfs__DocuSign_Status__c where dsfs__Envelope_Status__c = 'Completed' AND dsfs__Opportunity__c  IN:opportunityClosedWonHopsIds  ];
             system.debug('docusignStatusList'+docusignStatusList);
             if(!docusignStatusList.isEmpty())
             {
@@ -120,7 +120,7 @@ public without sharing class OpportunityInventoryUpdation {
             
         }
         
-        
+        closedWonValidationSubSub(opportunityRecords,opportunityExpiredIds,opportunityClosedWonHopsIds,opportunityDocusignCompletedIds);
         
        
          
@@ -128,7 +128,11 @@ public without sharing class OpportunityInventoryUpdation {
       
       
         
-        Profile p = [Select Name from Profile where Id =: userinfo.getProfileid()];
+        
+	}
+	public static void closedWonValidationSubSub(List<Opportunity> opportunityRecords,Set<Id> opportunityExpiredIds,Set<Id> opportunityClosedWonHopsIds,Set<Id> opportunityDocusignCompletedIds)
+	{
+		Profile p = [Select Name from Profile where Id =: userinfo.getProfileid()];
         
         for(Opportunity opportunityObject : opportunityRecords)
         {
