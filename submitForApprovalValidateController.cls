@@ -24,7 +24,8 @@ public without sharing class submitForApprovalValidateController {
                 
                 Map<Id,SBQQ__QuoteLine__c> quoteLineMap = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Product_Category__c,Start_Date_Non_Rahr__c,SBQQ__Quote__r.Quote_Name__c,SBQQ__Quantity__c,SBQQ__ProductName__c,SBQQ__Quote__c,SBQQ__Quote__r.Id,SBQQ__Quote__r.SBQQ__Opportunity2__c,SBQQ__Quote__r.SBQQ__Account__c,SBQQ__Quote__r.SBQQ__Account__r.name,SBQQ__Product__c,SBQQ__Product__r.ProductCode,SBQQ__Product__r.Name FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Craft Brewing Contracted Hops' OR Product_Category__c = 'Craft Brewing Hops')]);
                 Map<Id,SBQQ__QuoteLine__c> quoteLineMapDate = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Craft Brewing Contracted Hops' OR Product_Category__c = 'Non-Rahr Bulk' OR Product_Category__c = 'Craft Brewing Hops')]);
-               
+               	Map<Id,SBQQ__QuoteLine__c> quoteLineMapRahr = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c,Trucking_Cost_per_unit__c,Price_TBD__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Rahr Bulk' )]);
+
                 if(!quoteLineMapDate.isEmpty())
                 {
                     for(SBQQ__QuoteLine__c quoteLineObjectDate : quoteLineMapDate.values())
@@ -41,34 +42,15 @@ public without sharing class submitForApprovalValidateController {
                             return messageToReturn;
                         }                        
                     }
-                    if(!inventoryNameSet.isEmpty()){
-                        Map<Id,Inventory__c> inventoryCropYearMap = new Map<Id,Inventory__c>([SELECT Id, Name, Available_From__c, Soft_Reserve__c, Hard_Reserve__c, Active__c,Total_Volume__c,No_more_crop_available_with_Grower__c, Product__c,Product__r.ProductCode, Available_Volume__c, Crop_Year__c FROM Inventory__c where Name =:inventoryNameSet]);
-                        Map<String,Inventory__c> nameBasedInventoryCropYearMap = new Map<String,Inventory__c>();
-                        if(inventoryCropYearMap.isEmpty())
-                        {
-                            messageToReturn = 'Inventory is not available for this Crop year or the Crop year has not been selected or the Inventory record has not been created for this product.';
-                            return messageToReturn;
-                        }
-                        for(Inventory__c inventoryRecord : inventoryCropYearMap.values())
-                        {
-                            nameBasedInventoryCropYearMap.put(inventoryRecord.name,inventoryRecord);
-                        }
-                        //for(SBQQ__QuoteLine__c quoteLineObjectRecord : quoteLineMapDate.values())
-                        for(String inventoryName:inventoryNameSet)
-                        {
-                            if(!nameBasedInventoryCropYearMap.containsKey(inventoryName))
-                            {
-                                messageToReturn = 'Inventory is not available for this Crop year or the Crop year has not been selected or the Inventory record has not been created for this product.';
-                                return messageToReturn;
-                            }
-                        }
-                    }
-                }
+               
+                } 
                 
                 
               
-                     
-                     messageToReturn = validateBeforeApprovalProcessForOfftakes(recordId,quote,messageToReturn);
+                     messageToReturn = validateBeforeApprovalProcessForInventory(recordId,quote,messageToReturn,inventorySet,quoteLineMapDate);
+                
+                     messageToReturn = validateBeforeApprovalProcessForOfftakes(recordId,quote,messageToReturn,quoteLineMapRahr);
+					messageToReturn = validateBeforeApprovalProcessForTruckingCost(recordId,quote,quoteLineMapRahr,messageToReturn);
                
                 if(!quoteLineMap.isEmpty())
                 {
@@ -103,15 +85,54 @@ public without sharing class submitForApprovalValidateController {
         
         return messageToReturn;
     }
-
-
-	public static String validateBeforeApprovalProcessForOfftakes(Id recordId,SBQQ__Quote__c quote,String messageToReturn){
+	public static String validateBeforeApprovalProcessForInventory(Id recordId,SBQQ__Quote__c quote,String messageToReturn,Set<string> inventoryNameSet,Map<Id,SBQQ__QuoteLine__c> quoteLineMapDate){
         system.debug('Checkmethod');
 		//String messageToReturn = 'Success';
 		try{
 	 if(quote.SBQQ__Primary__c)
             {
-				 Map<Id,SBQQ__QuoteLine__c> quoteLineMapRahr = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c,Trucking_Cost_per_unit__c,Price_TBD__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Rahr Bulk' )]);
+	
+	      if(!inventoryNameSet.isEmpty() && !quoteLineMapDate.isEmpty()){
+                        Map<Id,Inventory__c> inventoryCropYearMap = new Map<Id,Inventory__c>([SELECT Id, Name, Available_From__c, Soft_Reserve__c, Hard_Reserve__c, Active__c,Total_Volume__c,No_more_crop_available_with_Grower__c, Product__c,Product__r.ProductCode, Available_Volume__c, Crop_Year__c FROM Inventory__c where Name =:inventoryNameSet]);
+                        Map<String,Inventory__c> nameBasedInventoryCropYearMap = new Map<String,Inventory__c>();
+                        if(inventoryCropYearMap.isEmpty())
+                        {
+                            messageToReturn = 'Inventory is not available for this Crop year or the Crop year has not been selected or the Inventory record has not been created for this product.';
+                            return messageToReturn;
+                        }
+                        for(Inventory__c inventoryRecord : inventoryCropYearMap.values())
+                        {
+                            nameBasedInventoryCropYearMap.put(inventoryRecord.name,inventoryRecord);
+                        }
+                        //for(SBQQ__QuoteLine__c quoteLineObjectRecord : quoteLineMapDate.values())
+                        for(String inventoryName:inventoryNameSet)
+                        {
+                            if(!nameBasedInventoryCropYearMap.containsKey(inventoryName))
+                            {
+                                messageToReturn = 'Inventory is not available for this Crop year or the Crop year has not been selected or the Inventory record has not been created for this product.';
+                                return messageToReturn;
+                            }
+                        }
+                    }
+					}
+					}
+					catch(Exception error)
+        {
+            messageToReturn = error.getMessage();
+        }
+        
+        
+        return messageToReturn;
+    }
+
+
+	public static String validateBeforeApprovalProcessForOfftakes(Id recordId,SBQQ__Quote__c quote,String messageToReturn,Map<Id,SBQQ__QuoteLine__c> quoteLineMapRahr){
+        system.debug('Checkmethod');
+		//String messageToReturn = 'Success';
+		try{
+	 if(quote.SBQQ__Primary__c)
+            {
+				 //Map<Id,SBQQ__QuoteLine__c> quoteLineMapRahr = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c,Trucking_Cost_per_unit__c,Price_TBD__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Rahr Bulk' )]);
                Map<Id,Offtake__c> OfftakeRec = new Map<Id,Offtake__c>([SELECT Id,Quote_Line__r.SBQQ__StartDate__c,Quote_Line__r.SBQQ__EndDate__c,QuoteLine_Qty__c,Quote_Line__r.SBQQ__Product__r.Name,Total_Offtake_Qty__c,End_Date__c,Start_Date__c,Unit__c,Jan__c,Feb__c,Mar__c,Apr__c,May__c,Jun__c,Jul__c,Aug__c,Sep__c,Oct__c,Nov__c,Dec__c
                FROM Offtake__c where Quote_Line__c IN:  quoteLineMapRahr.Keyset()]);
 			   if(!quoteLineMapRahr.isEmpty())
@@ -135,7 +156,24 @@ public without sharing class submitForApprovalValidateController {
                 }
                    
                  }
-                   for(SBQQ__QuoteLine__c quoteline : quoteLineMapRahr.values())
+                  
+			}
+		}
+    catch(Exception error)
+        {
+            messageToReturn = error.getMessage();
+        }
+        
+        
+        return messageToReturn;
+    }
+	public static String validateBeforeApprovalProcessForTruckingCost(Id recordId,SBQQ__Quote__c quote,Map<Id,SBQQ__QuoteLine__c> quoteLineMapRahr,String messageToReturn){
+	 system.debug('Checkmethod');
+		//String messageToReturn = 'Success';
+		try{
+	 if(quote.SBQQ__Primary__c)
+            {
+	 for(SBQQ__QuoteLine__c quoteline : quoteLineMapRahr.values())
                    {
                        if(quoteline.Trucking_Cost_per_unit__c == 0 && quoteline.Price_TBD__c == False)
                        {
@@ -143,9 +181,9 @@ public without sharing class submitForApprovalValidateController {
                           return messageToReturn;
                        }
                    }
-			}
-		}
-    catch(Exception error)
+				   }
+				   }
+				   catch(Exception error)
         {
             messageToReturn = error.getMessage();
         }
@@ -193,7 +231,7 @@ public without sharing class submitForApprovalValidateController {
                                 newMap.put(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode, quoteLineObject.SBQQ__Quantity__c);
                             }
                             
-                           if(quoteLineObject.SBQQ__Quantity__c > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c || newMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode) > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).No_more_crop_available_with_Grower__c == False && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Active__c==true )
+                           if(nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).No_more_crop_available_with_Grower__c == False && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Active__c==true && (quoteLineObject.SBQQ__Quantity__c > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c || newMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode) > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c))
                             {
                                 
                                 isWishList = true;
@@ -209,21 +247,9 @@ public without sharing class submitForApprovalValidateController {
                                     index = index+1;
                                 }
                             }
+							 messageToReturn = validateBeforeApprovalProcessForAdditionalCrop(recordId,quote,messageToReturn,quoteLineMap,nameBasedInventoryMap,isWishList,index,newMap);
                           
-                             if(quoteLineObject.SBQQ__Quantity__c > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c || newMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode) > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).No_more_crop_available_with_Grower__c == true && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Active__c==true )
-                            {      
-                                isWishList = true;   
-                                if(!messageToReturn.contains(quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name)){
-                                if(messageToReturn == 'Success'){
-                                    messageToReturn = index +'.Additional crop cannot be procured for this year, for the Product : '+quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name+', please ensure quantity is less than or equal to the Available quantity for this Crop year?'+'<br/>';
-                                }
-                                else
-                                {
-                                    messageToReturn = messageToReturn  +' ' +index +'.Additional crop cannot be procured for this year, for the Product : '+quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name+', please ensure quantity is less than or equal to the Available quantity for this Crop year?'+'<br/>';
-                                }
-                                index = index+1;
-                                }
-                            }
+                            
                         }
                     }
                    // messageToReturn.split('\n');
@@ -254,7 +280,37 @@ public without sharing class submitForApprovalValidateController {
         
         return messageToReturn;
     }
-	
+	public static String validateBeforeApprovalProcessForAdditionalCrop(Id recordId,SBQQ__Quote__c quote,String messageToReturn,Map<Id,SBQQ__QuoteLine__c> quoteLineMap,Map<String,Inventory__c> nameBasedInventoryMap,Boolean isWishList,Integer index,Map<String, Decimal> newMap){
+        try{
+			if(quote.SBQQ__Primary__c)
+            {
+        //String messageToReturn = 'Success';
+        for(SBQQ__QuoteLine__c quoteLineObject : quoteLineMap.values()){
+	 if(nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).No_more_crop_available_with_Grower__c == true && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Active__c==true && (quoteLineObject.SBQQ__Quantity__c > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c || newMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode) > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c) )
+                            {      
+                                isWishList = true;   
+                                if(!messageToReturn.contains(quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name)){
+                                if(messageToReturn == 'Success'){
+                                    messageToReturn = index +'.Additional crop cannot be procured for this year, for the Product : '+quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name+', please ensure quantity is less than or equal to the Available quantity for this Crop year?'+'<br/>';
+                                }
+                                else
+                                {
+                                    messageToReturn = messageToReturn  +' ' +index +'.Additional crop cannot be procured for this year, for the Product : '+quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name+', please ensure quantity is less than or equal to the Available quantity for this Crop year?'+'<br/>';
+                                }
+                                index = index+1;
+                                }
+                            }
+							}
+            }
+    }
+        catch(Exception error)
+        {
+            messageToReturn = error.getMessage();
+        }
+        
+        
+        return messageToReturn;
+    }
             
 	
 	
