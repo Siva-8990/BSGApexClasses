@@ -26,27 +26,10 @@ public without sharing class submitForApprovalValidateController {
                 Map<Id,SBQQ__QuoteLine__c> quoteLineMapDate = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Craft Brewing Contracted Hops' OR Product_Category__c = 'Non-Rahr Bulk' OR Product_Category__c = 'Craft Brewing Hops')]);
                	Map<Id,SBQQ__QuoteLine__c> quoteLineMapRahr = new Map<Id,SBQQ__QuoteLine__c>([SELECT Name,Crop_Year__c,Available_Quantity__c,SBQQ__Product__r.ProductCode,Product_Category__c,Start_Date_Non_Rahr__c,Trucking_Cost_per_unit__c,Price_TBD__c FROM SBQQ__QuoteLine__c where SBQQ__Quote__c =:  quote.Id AND (Product_Category__c = 'Rahr Bulk' )]);
 
-                if(!quoteLineMapDate.isEmpty())
-                {
-                    for(SBQQ__QuoteLine__c quoteLineObjectDate : quoteLineMapDate.values())
-                    {
-                        if(quote.SBQQ__StartDate__c > quoteLineObjectDate.Start_Date_Non_Rahr__c){
-                            messageToReturn = 'Quote Line Start Date should be greater or equal to the Quote Start Date.';
-                            return messageToReturn;
-                        }
-                        if((quoteLineObjectDate.Product_Category__c == 'Craft Brewing Hops' || quoteLineObjectDate.Product_Category__c == 'Craft Brewing Contracted Hops')){
-                            inventoryNameSet.add(quoteLineObjectDate.Crop_Year__c +' - '+quoteLineObjectDate.SBQQ__Product__r.ProductCode);
-                        }
-                        if(((quoteLineObjectDate.Product_Category__c == 'Craft Brewing Hops' || quoteLineObjectDate.Product_Category__c == 'Craft Brewing Contracted Hops') && string.isBlank(quoteLineObjectDate.Crop_Year__c)) || (quoteLineObjectDate.Product_Category__c == 'Craft Brewing Contracted Hops' && string.isBlank(String.valueOf(quoteLineObjectDate.Available_Quantity__c)))){
-                            messageToReturn = 'Inventory is not available for this Crop year or the Crop year has not been selected or the Inventory record has not been created for this product.';
-                            return messageToReturn;
-                        }                        
-                    }
                
-                } 
                 
                 
-              
+                     messageToReturn = validateBeforeApprovalProcessForStartDateAndInventory(recordId,quote,messageToReturn,quoteLineMapDate,inventoryNameSet);
                      messageToReturn = validateBeforeApprovalProcessForInventory(recordId,quote,messageToReturn,inventorySet,quoteLineMapDate);
                 
                      messageToReturn = validateBeforeApprovalProcessForOfftakes(recordId,quote,messageToReturn,quoteLineMapRahr);
@@ -85,6 +68,42 @@ public without sharing class submitForApprovalValidateController {
         
         return messageToReturn;
     }
+	public static String validateBeforeApprovalProcessForStartDateAndInventory(Id recordId,SBQQ__Quote__c quote,String messageToReturn,Map<Id,SBQQ__QuoteLine__c> quoteLineMapDate,Set<string> inventoryNameSet){
+        system.debug('Checkmethod');
+		//String messageToReturn = 'Success';
+		try{
+	 if(quote.SBQQ__Primary__c)
+            {
+	
+	 if(!quoteLineMapDate.isEmpty())
+                {
+                    for(SBQQ__QuoteLine__c quoteLineObjectDate : quoteLineMapDate.values())
+                    {
+                        if(quote.SBQQ__StartDate__c > quoteLineObjectDate.Start_Date_Non_Rahr__c){
+                            messageToReturn = 'Quote Line Start Date should be greater or equal to the Quote Start Date.';
+                            return messageToReturn;
+                        }
+                        if((quoteLineObjectDate.Product_Category__c == 'Craft Brewing Hops' || quoteLineObjectDate.Product_Category__c == 'Craft Brewing Contracted Hops')){
+                            inventoryNameSet.add(quoteLineObjectDate.Crop_Year__c +' - '+quoteLineObjectDate.SBQQ__Product__r.ProductCode);
+                        }
+                        if(((quoteLineObjectDate.Product_Category__c == 'Craft Brewing Hops' || quoteLineObjectDate.Product_Category__c == 'Craft Brewing Contracted Hops') && string.isBlank(quoteLineObjectDate.Crop_Year__c)) || (quoteLineObjectDate.Product_Category__c == 'Craft Brewing Contracted Hops' && string.isBlank(String.valueOf(quoteLineObjectDate.Available_Quantity__c)))){
+                            messageToReturn = 'Inventory is not available for this Crop year or the Crop year has not been selected or the Inventory record has not been created for this product.';
+                            return messageToReturn;
+                        }                        
+                    }
+               
+                } 
+				}
+				}
+				catch(Exception error)
+        {
+            messageToReturn = error.getMessage();
+        }
+        
+        
+        return messageToReturn;
+    }
+				
 	public static String validateBeforeApprovalProcessForInventory(Id recordId,SBQQ__Quote__c quote,String messageToReturn,Set<string> inventoryNameSet,Map<Id,SBQQ__QuoteLine__c> quoteLineMapDate){
         system.debug('Checkmethod');
 		//String messageToReturn = 'Success';
@@ -231,22 +250,7 @@ public without sharing class submitForApprovalValidateController {
                                 newMap.put(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode, quoteLineObject.SBQQ__Quantity__c);
                             }
                             
-                           if(nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).No_more_crop_available_with_Grower__c == False && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Active__c==true && (quoteLineObject.SBQQ__Quantity__c > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c || newMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode) > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c))
-                            {
-                                
-                                isWishList = true;
-                                quoteIdList.add(quoteLineObject.SBQQ__Quote__r.id);
-                                if(!messageToReturn.contains(quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name)){
-                                    if(messageToReturn == 'Success'){
-                                        messageToReturn = index +'.There is insufficient availability of'+' '+quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name+'.  A notification has been sent to the Hops Team to procure additional volume for contracting.  Kindly re-submit for approval when additional product is available, or create a new Quote with sufficient availability.'+'<br/>';
-                                    }
-                                    else
-                                    {
-                                        messageToReturn = messageToReturn  +' ' +index +'.There is insufficient availability of'+' '+quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name+'.  A notification has been sent to the Hops Team to procure additional volume for contracting.  Kindly re-submit for approval when additional product is available, or create a new Quote with sufficient availability.'+'<br/>';
-                                    }
-                                    index = index+1;
-                                }
-                            }
+                             messageToReturn = validateBeforeApprovalProcessForInsufficientAvailability(recordId,quote,messageToReturn,quoteLineMap,nameBasedInventoryMap,isWishList,index,newMap,quoteIdList);
 							 messageToReturn = validateBeforeApprovalProcessForAdditionalCrop(recordId,quote,messageToReturn,quoteLineMap,nameBasedInventoryMap,isWishList,index,newMap);
                           
                             
@@ -273,6 +277,40 @@ public without sharing class submitForApprovalValidateController {
             }
 		}
 			catch(Exception error)
+        {
+            messageToReturn = error.getMessage();
+        }
+        
+        
+        return messageToReturn;
+    }
+	public static String validateBeforeApprovalProcessForInsufficientAvailability(Id recordId,SBQQ__Quote__c quote,String messageToReturn,Map<Id,SBQQ__QuoteLine__c> quoteLineMap,Map<String,Inventory__c> nameBasedInventoryMap,Boolean isWishList,Integer index,Map<String, Decimal> newMap,Set<id> quoteIdList){
+        try{
+			if(quote.SBQQ__Primary__c)
+            {
+        //String messageToReturn = 'Success';
+        for(SBQQ__QuoteLine__c quoteLineObject : quoteLineMap.values()){
+	
+	if(nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).No_more_crop_available_with_Grower__c == False && nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Active__c==true && (quoteLineObject.SBQQ__Quantity__c > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c || newMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode) > nameBasedInventoryMap.get(quoteLineObject.Crop_Year__c +' - '+quoteLineObject.SBQQ__Product__r.ProductCode).Available_Volume__c))
+                            {
+                                
+                                isWishList = true;
+                                quoteIdList.add(quoteLineObject.SBQQ__Quote__r.id);
+                                if(!messageToReturn.contains(quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name)){
+                                    if(messageToReturn == 'Success'){
+                                        messageToReturn = index +'.There is insufficient availability of'+' '+quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name+'.  A notification has been sent to the Hops Team to procure additional volume for contracting.  Kindly re-submit for approval when additional product is available, or create a new Quote with sufficient availability.'+'<br/>';
+                                    }
+                                    else
+                                    {
+                                        messageToReturn = messageToReturn  +' ' +index +'.There is insufficient availability of'+' '+quoteLineObject.Crop_Year__c+' '+quoteLineObject.SBQQ__Product__r.Name+'.  A notification has been sent to the Hops Team to procure additional volume for contracting.  Kindly re-submit for approval when additional product is available, or create a new Quote with sufficient availability.'+'<br/>';
+                                    }
+                                    index = index+1;
+                                }
+                            }
+							}
+            }
+    }
+        catch(Exception error)
         {
             messageToReturn = error.getMessage();
         }
